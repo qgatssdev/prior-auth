@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { IsInt, IsString, validateSync } from 'class-validator';
 import { config } from 'dotenv';
 
-config();
+config({ quiet: true });
 
 class Configuration {
   private readonly logger = new Logger(Configuration.name);
