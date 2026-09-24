@@ -19,7 +19,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "typeorm": "typeorm-ts-node-commonjs -d src/libs/core/db/typeOrm.config.ts",
     "migration:generate": "npm run typeorm -- migration:generate src/libs/core/db/migrations/Init",
-    "migration:run": "npm run typeorm -- migration:run"
+    "migration:run": "npm run typeorm -- migration:run",
+    "seed": "ts-node src/libs/core/db/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -75,6 +76,10 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/$1"
+    },
+    "watchman": false
   }
 }
