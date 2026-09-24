@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
+import { PriorAuthsModule } from './prior-auths/prior-auths.module';
 
-// Feature modules (prior-auths, patients, stats, webhooks, simulator) are added here.
 @Module({
-  imports: [],
+  imports: [PriorAuthsModule],
 })
 export class DomainModule {}
