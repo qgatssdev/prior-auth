@@ -1,0 +1,15 @@
+# Optional: runs the same Postgres 16 the app expects, for anyone with Docker.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: padesk
+      POSTGRES_PASSWORD: padesk
+      POSTGRES_DB: padesk
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
