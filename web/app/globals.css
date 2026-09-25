@@ -160,10 +160,6 @@
   [aria-disabled="true"] {
     cursor: not-allowed;
   }
-  /* The date field's calendar icon opens the picker, so it gets the hand too. */
-  input[type="date"]::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-  }
 
   html:has(body[data-scroll-locked]) {
     overflow: hidden !important;

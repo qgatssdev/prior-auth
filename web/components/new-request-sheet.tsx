@@ -5,7 +5,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -22,6 +21,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { createCase, fetcher, paths, transitionCase } from "@/lib/api";
+import { DatePicker } from "./date-picker";
 import { SearchableSelect } from "./searchable-select";
 import { TREATMENTS } from "@/lib/codes";
 import { dayFromToday } from "@/lib/dates";
@@ -238,12 +238,12 @@ export function NewRequestSheet({ open, onOpenChange, onChanged }: NewRequestShe
               </Field>
 
               <Field label="Service date" error={errors.serviceDate}>
-                <Input
-                  type="date"
-                  min={dayFromToday(MIN_DAYS_AHEAD)}
+                <DatePicker
                   value={form.serviceDate}
-                  onChange={(e) => update({ serviceDate: e.target.value })}
-                  aria-invalid={!!errors.serviceDate}
+                  onChange={(serviceDate) => update({ serviceDate })}
+                  minDate={dayFromToday(MIN_DAYS_AHEAD)}
+                  placeholder="Choose a date"
+                  invalid={!!errors.serviceDate}
                 />
               </Field>
             </div>

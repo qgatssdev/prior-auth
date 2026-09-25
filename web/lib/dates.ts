@@ -44,11 +44,16 @@ export function formatDate(day: string) {
   return `${date.getDate()} ${month} ${date.getFullYear()}`;
 }
 
-// "YYYY-MM-DD" for a day n days from today, in local time (for <input type="date">).
-export function dayFromToday(days: number) {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
+// "YYYY-MM-DD" in local time: the format the API and the date picker exchange.
+export function toDayString(date: Date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${date.getFullYear()}-${month}-${day}`;
+}
+
+// "YYYY-MM-DD" for a day n days from today.
+export function dayFromToday(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return toDayString(date);
 }
