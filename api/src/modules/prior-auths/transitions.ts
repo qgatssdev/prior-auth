@@ -30,3 +30,12 @@ export const FINAL = [APPROVED, CANCELLED];
 // A note is required when resubmitting from NEEDS_INFO and when appealing.
 export const noteRequired = (from: PriorAuthStatus, to: PriorAuthStatus) =>
   (from === NEEDS_INFO && to === SUBMITTED) || to === APPEALED;
+
+// What the queue shows by default: every case someone may still need to act on.
+export const OPEN = [
+  PriorAuthStatus.DRAFT,
+  SUBMITTED,
+  PENDING_PAYER,
+  NEEDS_INFO,
+  APPEALED,
+];
