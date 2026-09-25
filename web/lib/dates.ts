@@ -36,3 +36,19 @@ export function formatRelative(iso: string) {
   if (hours < 24) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
 }
+
+// "14 Aug 1942", for dates of birth.
+export function formatDate(day: string) {
+  const date = parseDay(day);
+  const month = date.toLocaleDateString("en-US", { month: "short" });
+  return `${date.getDate()} ${month} ${date.getFullYear()}`;
+}
+
+// "YYYY-MM-DD" for a day n days from today, in local time (for <input type="date">).
+export function dayFromToday(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
