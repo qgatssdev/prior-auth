@@ -24,14 +24,17 @@ export class PriorAuthRequestRepository extends BaseRepository<PriorAuthRequest>
     const query = this.createQueryBuilder('pa')
       .leftJoin('pa.patient', 'patient')
       .leftJoin('pa.payer', 'payer')
+      .leftJoin('pa.coverage', 'coverage')
       .addSelect([
         'patient.id',
         'patient.firstName',
         'patient.lastName',
-        'patient.memberId',
         'payer.id',
         'payer.name',
         'payer.slug',
+        'coverage.id',
+        'coverage.memberId',
+        'coverage.priority',
       ])
       .where('pa.status IN (:...statuses)', { statuses })
       .orderBy('pa.dueBy', 'ASC')
@@ -53,7 +56,7 @@ export class PriorAuthRequestRepository extends BaseRepository<PriorAuthRequest>
   findDetail(id: string) {
     return this.findOne({
       where: { id },
-      relations: { patient: true, payer: true, events: true },
+      relations: { patient: true, payer: true, coverage: true, events: true },
       order: { events: { createdAt: 'ASC' } },
     });
   }

@@ -84,7 +84,7 @@ export function QueueTable({ items, isLoading, error, onRetry }: QueueTableProps
                 <div className="font-medium">
                   {item.patient.lastName}, {item.patient.firstName}
                 </div>
-                <div className="text-xs text-muted-foreground">{item.patient.memberId}</div>
+                <div className="text-xs text-muted-foreground">{item.coverage.memberId}</div>
               </TableCell>
               <TableCell className="px-4">
                 <div>{item.treatmentName}</div>

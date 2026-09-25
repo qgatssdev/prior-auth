@@ -1,5 +1,9 @@
 import { randomBytes } from 'crypto';
-import { ActorType, PriorAuthStatus } from 'src/libs/common/constants';
+import {
+  ActorType,
+  CoveragePriority,
+  PriorAuthStatus,
+} from 'src/libs/common/constants';
 import {
   addDays,
   generatePayerReference,
@@ -7,6 +11,7 @@ import {
   randomInt,
   toDateString,
 } from 'src/libs/common/helpers/utils';
+import { PatientCoverage } from 'src/modules/patients/entity/patient-coverage.entity';
 import { Patient } from 'src/modules/patients/entity/patient.entity';
 import { Payer } from 'src/modules/payers/entity/payer.entity';
 import { PriorAuthEvent } from 'src/modules/prior-auths/entity/prior-auth-event.entity';
@@ -47,6 +52,8 @@ const PATIENT_NAMES = [
   ['Nils', 'Pseudonym'],
   ['Olga', 'Trialby'],
 ];
+
+const PATIENTS_WITH_SECONDARY = 9;
 
 const TREATMENTS = [
   {
@@ -121,7 +128,7 @@ async function seed() {
   await dataSource.transaction(async (manager) => {
     // Wipe everything so the seed is safe to re-run.
     await manager.query(
-      'TRUNCATE prior_auth_event, prior_auth_request, payer_webhook_event, patient, payer CASCADE',
+      'TRUNCATE prior_auth_event, prior_auth_request, payer_webhook_event, patient_coverage, patient, payer CASCADE',
     );
 
     const payers = await manager.save(
@@ -134,15 +141,36 @@ async function seed() {
     );
 
     const patients = await manager.save(
-      PATIENT_NAMES.map(([firstName, lastName]) => {
-        const payer = pick(payers);
-        return manager.create(Patient, {
+      PATIENT_NAMES.map(([firstName, lastName]) =>
+        manager.create(Patient, {
           firstName,
           lastName,
           dateOfBirth: `${randomInt(1940, 1965)}-${String(randomInt(1, 12)).padStart(2, '0')}-${String(randomInt(1, 28)).padStart(2, '0')}`,
-          memberId: `${payerPrefix(payer.slug).slice(0, 3)}-${randomInt(100000, 999999)}`,
-          payerId: payer.id,
-        });
+        }),
+      ),
+    );
+
+    // Everyone has a primary insurer; the first 9 of 15 also have a secondary one.
+    const coverage = (
+      patient: Patient,
+      payer: Payer,
+      priority: CoveragePriority,
+    ) =>
+      manager.create(PatientCoverage, {
+        patientId: patient.id,
+        payerId: payer.id,
+        memberId: `${payerPrefix(payer.slug).slice(0, 3)}-${randomInt(100000, 999999)}`,
+        priority,
+      });
+    const coverages = await manager.save(
+      patients.flatMap((patient, index) => {
+        const primary = pick(payers);
+        const plans = [coverage(patient, primary, CoveragePriority.PRIMARY)];
+        if (index < PATIENTS_WITH_SECONDARY) {
+          const secondary = pick(payers.filter((p) => p.id !== primary.id));
+          plans.push(coverage(patient, secondary, CoveragePriority.SECONDARY));
+        }
+        return plans;
       }),
     );
 
@@ -153,7 +181,13 @@ async function seed() {
 
     for (const status of statuses) {
       const patient = pick(patients);
-      const payer = payers.find((p) => p.id === patient.payerId)!;
+      // Usually bill the primary plan; about 1 in 5 cases bills the secondary, if there is one.
+      const plans = coverages.filter((c) => c.patientId === patient.id);
+      const plan =
+        plans.length > 1 && randomInt(1, 5) === 1
+          ? plans.find((c) => c.priority === CoveragePriority.SECONDARY)!
+          : plans.find((c) => c.priority === CoveragePriority.PRIMARY)!;
+      const payer = payers.find((p) => p.id === plan.payerId)!;
       const serviceDate = addDays(new Date(), randomInt(2, 30));
       const steps = HISTORY[status];
 
@@ -195,6 +229,7 @@ async function seed() {
       const request = await manager.save(
         manager.create(PriorAuthRequest, {
           patientId: patient.id,
+          coverageId: plan.id,
           payerId: payer.id,
           ...pick(TREATMENTS),
           serviceDate: toDateString(serviceDate),

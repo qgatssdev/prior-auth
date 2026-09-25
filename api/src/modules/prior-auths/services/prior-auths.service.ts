@@ -12,7 +12,7 @@ import {
   toDateString,
 } from 'src/libs/common/helpers/utils';
 import { Actor } from 'src/libs/common/types/global-types';
-import { Patient } from 'src/modules/patients/entity/patient.entity';
+import { PatientCoverage } from 'src/modules/patients/entity/patient-coverage.entity';
 import { Payer } from 'src/modules/payers/entity/payer.entity';
 import { isUUID } from 'class-validator';
 import { EntityManager } from 'typeorm';
@@ -83,17 +83,24 @@ export class PriorAuthsService {
     }
 
     return this.entityManager.transaction(async (manager) => {
-      if (!(await manager.exists(Patient, { where: { id: dto.patientId } }))) {
-        throw new NotFoundException('Patient not found');
+      const coverage = await manager.findOne(PatientCoverage, {
+        where: { id: dto.coverageId },
+      });
+      if (!coverage) {
+        throw new NotFoundException('Coverage not found');
       }
-      if (!(await manager.exists(Payer, { where: { id: dto.payerId } }))) {
-        throw new NotFoundException('Payer not found');
+      // The payer must be one this patient actually holds, so the member ID matches.
+      if (coverage.patientId !== dto.patientId || !coverage.active) {
+        throw new BadRequestException(
+          'Coverage does not belong to this patient',
+        );
       }
 
       const serviceDate = new Date(`${dto.serviceDate}T00:00:00`);
       const request = await manager.save(
         manager.create(PriorAuthRequest, {
           ...dto,
+          payerId: coverage.payerId,
           dueBy: toDateString(addDays(serviceDate, -3)),
           status: PriorAuthStatus.DRAFT,
         }),

@@ -22,3 +22,9 @@ export enum WebhookResult {
   CASE_NOT_FOUND = 'case_not_found',
   INVALID_SIGNATURE = 'invalid_signature',
 }
+
+// Which insurer is billed first when a patient has more than one.
+export enum CoveragePriority {
+  PRIMARY = 'PRIMARY',
+  SECONDARY = 'SECONDARY',
+}

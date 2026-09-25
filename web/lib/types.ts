@@ -26,13 +26,23 @@ export interface Payer {
   avgTurnaroundDays?: number;
 }
 
+export type CoveragePriority = "PRIMARY" | "SECONDARY";
+
+// One insurance plan a patient holds. The member ID belongs to the plan.
+export interface Coverage {
+  id: string;
+  memberId: string;
+  priority: CoveragePriority;
+  payerId?: string;
+  payer?: Pick<Payer, "id" | "name">;
+}
+
 export interface Patient {
   id: string;
   firstName: string;
   lastName: string;
-  memberId: string;
-  payerId?: string;
   dateOfBirth?: string;
+  coverages?: Coverage[];
 }
 
 export interface PriorAuthCase {
@@ -47,8 +57,10 @@ export interface PriorAuthCase {
   createdAt: string;
   updatedAt: string;
   patientId: string;
+  coverageId: string;
   payerId: string;
   patient: Patient;
+  coverage: Coverage;
   payer: Payer;
 }
 
@@ -91,7 +103,7 @@ export interface Stats {
 
 export interface CreateCaseBody {
   patientId: string;
-  payerId: string;
+  coverageId: string;
   treatmentName: string;
   cptCode: string;
   icd10Code: string;

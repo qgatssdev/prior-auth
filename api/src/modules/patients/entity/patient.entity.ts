@@ -1,6 +1,6 @@
 import { BaseEntity } from 'src/libs/core/base/BaseEntity';
-import { Payer } from 'src/modules/payers/entity/payer.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
+import { PatientCoverage } from './patient-coverage.entity';
 
 @Entity()
 export class Patient extends BaseEntity {
@@ -13,13 +13,6 @@ export class Patient extends BaseEntity {
   @Column('date')
   dateOfBirth: string;
 
-  @Column()
-  memberId: string;
-
-  @Column('uuid')
-  payerId: string;
-
-  @ManyToOne(() => Payer)
-  @JoinColumn({ name: 'payerId' })
-  payer: Payer;
+  @OneToMany(() => PatientCoverage, (coverage) => coverage.patient)
+  coverages: PatientCoverage[];
 }

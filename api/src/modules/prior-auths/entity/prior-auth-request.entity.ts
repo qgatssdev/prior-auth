@@ -1,5 +1,6 @@
 import { PriorAuthStatus } from 'src/libs/common/constants';
 import { BaseEntity } from 'src/libs/core/base/BaseEntity';
+import { PatientCoverage } from 'src/modules/patients/entity/patient-coverage.entity';
 import { Patient } from 'src/modules/patients/entity/patient.entity';
 import { Payer } from 'src/modules/payers/entity/payer.entity';
 import {
@@ -24,6 +25,15 @@ export class PriorAuthRequest extends BaseEntity {
   @JoinColumn({ name: 'patientId' })
   patient: Patient;
 
+  // The coverage this case bills. Set by the server from the chosen coverage.
+  @Column('uuid')
+  coverageId: string;
+
+  @ManyToOne(() => PatientCoverage)
+  @JoinColumn({ name: 'coverageId' })
+  coverage: PatientCoverage;
+
+  // Copied from the coverage: the webhook lookup, queue filter and indexes use it.
   @Column('uuid')
   payerId: string;
 

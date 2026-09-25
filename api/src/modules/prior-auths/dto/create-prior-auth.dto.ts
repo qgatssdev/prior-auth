@@ -10,8 +10,9 @@ export class CreatePriorAuthDto {
   @IsUUID()
   patientId: string;
 
+  // Which of the patient's coverages to bill; the payer comes from it.
   @IsUUID()
-  payerId: string;
+  coverageId: string;
 
   @IsString()
   @IsNotEmpty()

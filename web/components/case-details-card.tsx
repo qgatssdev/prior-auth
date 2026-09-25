@@ -41,11 +41,17 @@ export function CaseDetailsCard({ data }: { data: CaseDetail }) {
             {patient.firstName} {patient.lastName}
           </Row>
           {patient.dateOfBirth && <Row label="Date of birth">{formatDate(patient.dateOfBirth)}</Row>}
-          <Row label="Member ID">{patient.memberId}</Row>
         </Section>
 
         <Section title="Coverage">
-          <Row label="Payer">{payer.name}</Row>
+          <Row label="Payer">
+            {payer.name}
+            <span className="text-muted-foreground">
+              {" "}
+              · {data.coverage.priority === "PRIMARY" ? "Primary" : "Secondary"} coverage
+            </span>
+          </Row>
+          <Row label="Member ID">{data.coverage.memberId}</Row>
           <Row label="Payer reference">
             {data.payerReference ?? <span className="text-muted-foreground">Not submitted yet</span>}
           </Row>

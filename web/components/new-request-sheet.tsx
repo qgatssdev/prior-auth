@@ -24,19 +24,19 @@ import {
 import { createCase, fetcher, paths, transitionCase } from "@/lib/api";
 import { TREATMENTS } from "@/lib/codes";
 import { dayFromToday } from "@/lib/dates";
-import type { Patient, Payer, PriorAuthCase } from "@/lib/types";
+import type { Coverage, Patient, PriorAuthCase } from "@/lib/types";
 
 // Same rule as the API: the service must be at least 4 days away.
 const MIN_DAYS_AHEAD = 4;
 
-const EMPTY_FORM = { patientId: "", payerId: "", treatment: "", serviceDate: "" };
+const EMPTY_FORM = { patientId: "", coverageId: "", treatment: "", serviceDate: "" };
 type Form = typeof EMPTY_FORM;
 type Errors = Partial<Record<keyof Form, string>>;
 
 function validate(form: Form): Errors {
   const errors: Errors = {};
   if (!form.patientId) errors.patientId = "Choose a patient";
-  if (!form.payerId) errors.payerId = "Choose a payer";
+  if (!form.coverageId) errors.coverageId = "Choose which insurance to bill";
   if (!form.treatment) errors.treatment = "Choose a treatment";
   if (!form.serviceDate) errors.serviceDate = "Choose a service date";
   // "YYYY-MM-DD" strings sort the same way as the dates they describe.
@@ -45,6 +45,9 @@ function validate(form: Form): Errors {
   }
   return errors;
 }
+
+const coverageLabel = (c: Coverage) =>
+  `${c.payer?.name} · ${c.priority === "PRIMARY" ? "Primary" : "Secondary"} · ${c.memberId}`;
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
@@ -65,7 +68,6 @@ interface NewRequestSheetProps {
 export function NewRequestSheet({ open, onOpenChange, onChanged }: NewRequestSheetProps) {
   const router = useRouter();
   const { data: patients } = useSWR<Patient[]>(paths.patients, fetcher);
-  const { data: payers } = useSWR<Payer[]>(paths.payers, fetcher);
 
   const [form, setForm] = useState<Form>(EMPTY_FORM);
   const [errors, setErrors] = useState<Errors>({});
@@ -74,6 +76,7 @@ export function NewRequestSheet({ open, onOpenChange, onChanged }: NewRequestShe
   const [created, setCreated] = useState<PriorAuthCase | null>(null);
 
   const treatment = TREATMENTS.find((t) => t.name === form.treatment);
+  const patient = patients?.find((p) => p.id === form.patientId);
   const createdPatient = patients?.find((p) => p.id === created?.patientId);
 
   function update(changes: Partial<Form>) {
@@ -104,7 +107,7 @@ export function NewRequestSheet({ open, onOpenChange, onChanged }: NewRequestShe
     try {
       const draft = await createCase({
         patientId: form.patientId,
-        payerId: form.payerId,
+        coverageId: form.coverageId,
         treatmentName: treatment.name,
         cptCode: treatment.cptCode,
         icd10Code: treatment.icd10Code,
@@ -162,11 +165,14 @@ export function NewRequestSheet({ open, onOpenChange, onChanged }: NewRequestShe
               <Field label="Patient" error={errors.patientId}>
                 <Select
                   value={form.patientId}
-                  // Auto-fill the payer from the patient; it stays editable.
+                  // Pre-select the patient's primary coverage; a secondary one can be chosen instead.
                   onValueChange={(patientId) =>
                     update({
                       patientId,
-                      payerId: patients?.find((p) => p.id === patientId)?.payerId ?? "",
+                      coverageId:
+                        patients
+                          ?.find((p) => p.id === patientId)
+                          ?.coverages?.find((c) => c.priority === "PRIMARY")?.id ?? "",
                     })
                   }
                 >
@@ -176,22 +182,30 @@ export function NewRequestSheet({ open, onOpenChange, onChanged }: NewRequestShe
                   <SelectContent>
                     {patients?.map((patient) => (
                       <SelectItem key={patient.id} value={patient.id}>
-                        {patient.lastName}, {patient.firstName} · {patient.memberId}
+                        {patient.lastName}, {patient.firstName}
+                        {(patient.coverages?.length ?? 0) > 1 && (
+                          <span className="text-muted-foreground"> · {patient.coverages?.length} plans</span>
+                        )}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </Field>
 
-              <Field label="Payer" error={errors.payerId}>
-                <Select value={form.payerId} onValueChange={(payerId) => update({ payerId })}>
-                  <SelectTrigger className="w-full" aria-invalid={!!errors.payerId}>
-                    <SelectValue placeholder="Choose a payer" />
+              {/* Only the chosen patient's own plans, so the payer and member ID always match. */}
+              <Field label="Insurance to bill" error={errors.coverageId}>
+                <Select
+                  value={form.coverageId}
+                  onValueChange={(coverageId) => update({ coverageId })}
+                  disabled={!patient}
+                >
+                  <SelectTrigger className="w-full" aria-invalid={!!errors.coverageId}>
+                    <SelectValue placeholder={patient ? "Choose a coverage" : "Choose a patient first"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {payers?.map((payer) => (
-                      <SelectItem key={payer.id} value={payer.id}>
-                        {payer.name}
+                    {patient?.coverages?.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {coverageLabel(c)}
                       </SelectItem>
                     ))}
                   </SelectContent>
