@@ -29,6 +29,10 @@ export abstract class BaseRepository<T extends BaseEntity> {
     return this.entity.count(options);
   }
 
+  async delete(id: string): Promise<void> {
+    await this.entity.delete(id);
+  }
+
   createQueryBuilder(alias: string) {
     return this.entity.createQueryBuilder(alias);
   }

@@ -10,4 +10,12 @@ export class PayerRepository extends BaseRepository<Payer> {
   ) {
     super(entityManager.getRepository(Payer));
   }
+
+  // webhookSecret is select: false, so it has to be asked for explicitly.
+  findBySlugWithSecret(slug: string) {
+    return this.createQueryBuilder('payer')
+      .addSelect('payer.webhookSecret')
+      .where('payer.slug = :slug', { slug })
+      .getOne();
+  }
 }
