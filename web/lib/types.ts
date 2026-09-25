@@ -57,8 +57,11 @@ export interface QueuePage {
   nextCursor: string | null;
 }
 
+// The API filters by a named group or a single status.
+export type StatusGroup = "OPEN" | "PENDING" | "ALL";
+
 export interface QueueParams {
-  status?: "OPEN" | PriorAuthStatus;
+  status?: StatusGroup | PriorAuthStatus;
   payerId?: string;
   limit?: number;
   cursor?: string;

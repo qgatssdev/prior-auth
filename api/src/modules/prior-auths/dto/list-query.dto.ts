@@ -9,11 +9,13 @@ import {
   Min,
 } from 'class-validator';
 import { PriorAuthStatus } from 'src/libs/common/constants';
+import { STATUS_GROUPS, type StatusGroup } from '../transitions';
 
 export class ListQueryDto {
   @IsOptional()
-  @IsIn(['OPEN', ...Object.values(PriorAuthStatus)])
-  status: 'OPEN' | PriorAuthStatus = 'OPEN';
+  // A group (OPEN, PENDING, ALL) or a single status.
+  @IsIn([...Object.keys(STATUS_GROUPS), ...Object.values(PriorAuthStatus)])
+  status: StatusGroup | PriorAuthStatus = 'OPEN';
 
   @IsOptional()
   @IsUUID()

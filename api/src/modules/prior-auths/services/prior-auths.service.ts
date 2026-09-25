@@ -21,7 +21,12 @@ import { PriorAuthRequest } from '../entity/prior-auth-request.entity';
 import { CreatePriorAuthDto } from '../dto/create-prior-auth.dto';
 import { ListQueryDto } from '../dto/list-query.dto';
 import { PriorAuthRequestRepository } from '../repository/prior-auth-request.repository';
-import { ALLOWED, canTransition, noteRequired, OPEN } from '../transitions';
+import {
+  ALLOWED,
+  canTransition,
+  noteRequired,
+  STATUS_GROUPS,
+} from '../transitions';
 
 // Cursor = base64url of "dueBy|id", the sort key of the last row on the page.
 const encodeCursor = ({ dueBy, id }: PriorAuthRequest) =>
@@ -46,7 +51,10 @@ export class PriorAuthsService {
   async list({ status, payerId, limit, cursor }: ListQueryDto) {
     // Fetch one extra row: if it exists, there is a next page.
     const rows = await this.priorAuthRequestRepository.findQueue({
-      statuses: status === 'OPEN' ? OPEN : [status],
+      statuses:
+        status in STATUS_GROUPS
+          ? STATUS_GROUPS[status as keyof typeof STATUS_GROUPS]
+          : [status as PriorAuthStatus],
       payerId,
       limit: limit + 1,
       after: cursor ? decodeCursor(cursor) : undefined,

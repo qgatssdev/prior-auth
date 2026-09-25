@@ -39,3 +39,12 @@ export const OPEN = [
   NEEDS_INFO,
   APPEALED,
 ];
+
+// Named groups the queue can filter by, besides a single status.
+export const STATUS_GROUPS = {
+  OPEN,
+  // Waiting on the insurer: matches the "Pending payer" stat.
+  PENDING: [SUBMITTED, PENDING_PAYER],
+  ALL: Object.values(PriorAuthStatus),
+};
+export type StatusGroup = keyof typeof STATUS_GROUPS;
