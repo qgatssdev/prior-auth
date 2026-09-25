@@ -14,8 +14,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { fetcher, paths, simulate } from "@/lib/api";
-import { STATUS } from "@/lib/status";
+import { PAYER_WORD_LABEL, PAYER_WORD_STATUS, STATUS } from "@/lib/status";
+import { SearchableSelect } from "./searchable-select";
+import { fullName } from "@/lib/utils";
 import type {
+  CaseDetail,
   PayerStatusWord,
   PriorAuthCase,
   QueuePage,
@@ -41,12 +44,26 @@ export function SimulatorForm({ onResult }: SimulatorFormProps) {
   // Kept even after the case leaves the OPEN list (e.g. once approved),
   // so "Send duplicate" still works for it.
   const [selected, setSelected] = useState<PriorAuthCase | null>(null);
-  const [status, setStatus] = useState<PayerStatusWord>("pending");
+  const [chosenStatus, setChosenStatus] = useState<PayerStatusWord>("pending");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
 
   const options =
     selected && !openCases.some((c) => c.id === selected.id) ? [selected, ...openCases] : openCases;
+
+  // Offer only updates the lifecycle accepts for this case right now (the API says which),
+  // so the insurer can't "send" a move that would just be rejected.
+  const { data: detail, mutate: mutateDetail } = useSWR<CaseDetail>(
+    selected ? paths.case(selected.id) : null,
+    fetcher,
+    { refreshInterval: 5000 },
+  );
+  const validWords = STATUS_WORDS.filter((word) =>
+    detail?.insurerActions.includes(PAYER_WORD_STATUS[word]),
+  );
+  // If the chosen status stops being valid (e.g. the case moved on), fall back to the first valid one.
+  const status = validWords.includes(chosenStatus) ? chosenStatus : validWords[0];
+  const current = detail ?? selected;
 
   async function send(mode: SimulatorMode) {
     if (!selected?.payerReference) return;
@@ -54,12 +71,14 @@ export function SimulatorForm({ onResult }: SimulatorFormProps) {
     try {
       const result = await simulate(selected.payer.slug, {
         payerReference: selected.payerReference,
-        status,
+        // Duplicate and bad-signature sends don't depend on the status, so any word will do.
+        status: status ?? "pending",
         note: note.trim() || undefined,
         mode,
       });
       onResult(mode, selected.payerReference, result);
       void mutate();
+      void mutateDetail();
     } catch (error) {
       // The simulator itself refused, e.g. "Send a normal event to this payer first".
       toast.error((error as Error).message);
@@ -74,37 +93,37 @@ export function SimulatorForm({ onResult }: SimulatorFormProps) {
         <CardTitle>Send an insurer update</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
-        <label className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5">
           <span className="text-sm font-medium">Case</span>
-          <Select
+          {/* Searchable: type a patient name or a reference such as ACME-70628. */}
+          <SearchableSelect
             value={selected?.id ?? ""}
-            onValueChange={(id) => setSelected(options.find((c) => c.id === id) ?? null)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Choose an open, submitted case" />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.patient.lastName}, {c.patient.firstName} · {c.payerReference} ·{" "}
-                  {STATUS[c.status].label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </label>
+            onChange={(id) => setSelected(options.find((c) => c.id === id) ?? null)}
+            options={options.map((c) => ({
+              value: c.id,
+              searchText: `${fullName(c.patient)} · ${c.payerReference} · ${STATUS[c.status].label}`,
+            }))}
+            placeholder="Choose an open, submitted case"
+            searchPlaceholder="Search by patient or reference…"
+            emptyText="No open case matches."
+          />
+        </div>
 
-        <div className="grid grid-cols-[12rem_1fr] gap-4">
+        <div className="grid gap-4 sm:grid-cols-[12rem_1fr]">
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium">Status to send</span>
-            <Select value={status} onValueChange={(value) => setStatus(value as PayerStatusWord)}>
+            <Select
+              value={status ?? ""}
+              onValueChange={(value) => setChosenStatus(value as PayerStatusWord)}
+              disabled={validWords.length === 0}
+            >
               <SelectTrigger className="w-full">
-                <SelectValue />
+                <SelectValue placeholder={selected ? "Nothing to send" : "Choose a case first"} />
               </SelectTrigger>
               <SelectContent>
-                {STATUS_WORDS.map((word) => (
+                {validWords.map((word) => (
                   <SelectItem key={word} value={word}>
-                    {word}
+                    {PAYER_WORD_LABEL[word]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -121,7 +140,7 @@ export function SimulatorForm({ onResult }: SimulatorFormProps) {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button disabled={!selected || busy} onClick={() => send("normal")}>
+          <Button disabled={!selected || !status || busy} onClick={() => send("normal")}>
             Send
           </Button>
           <Button variant="outline" disabled={!selected || busy} onClick={() => send("duplicate")}>
@@ -131,6 +150,12 @@ export function SimulatorForm({ onResult }: SimulatorFormProps) {
             Send with bad signature
           </Button>
         </div>
+        {selected && detail && validWords.length === 0 && current && (
+          <p className="text-sm text-muted-foreground">
+            This case is {STATUS[current.status].label.toLowerCase()}, so the insurer has no decision
+            to send. You can still send a duplicate or a bad signature.
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">
           Send duplicate re-sends the exact last event sent to this payer, like an insurer retry.
         </p>

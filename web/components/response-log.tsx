@@ -1,12 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { SimulatorMode } from "@/lib/types";
+import { MODE_LABEL, RESULT_LABEL } from "@/lib/status";
+import type { SimulatorMode, WebhookResult } from "@/lib/types";
 
 export interface LogEntry {
   id: number;
   time: string; // "12:04:10"
   mode: SimulatorMode;
   httpStatus: number;
-  outcome: string; // the webhook result, or its error message
+  outcome: string; // the raw webhook result (e.g. "duplicate_ignored"), or its error message
   reference: string;
 }
 
@@ -30,10 +31,12 @@ export function ResponseLog({ entries }: { entries: LogEntry[] }) {
         {entries.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nothing sent yet.</p>
         ) : (
-          <ol className="flex flex-col gap-1 font-mono text-sm">
+          <ol className="flex flex-col gap-1 font-mono text-xs break-words sm:text-sm">
             {entries.map((entry) => (
               <li key={entry.id} className={colorFor(entry)}>
-                {entry.time} · {entry.mode} · {entry.httpStatus} · {entry.outcome}
+                {entry.time} · {MODE_LABEL[entry.mode]} · {entry.httpStatus} ·{" "}
+                {/* Error messages are already readable; results get a label. */}
+                {RESULT_LABEL[entry.outcome as WebhookResult] ?? entry.outcome}
                 <span className="text-muted-foreground"> ({entry.reference})</span>
               </li>
             ))}

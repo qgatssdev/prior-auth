@@ -7,7 +7,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{title}</h2>
-      <dl className="grid grid-cols-[9rem_1fr] gap-x-4 gap-y-1.5 text-sm">{children}</dl>
+      <dl className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-sm sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-x-4">{children}</dl>
     </section>
   );
 }

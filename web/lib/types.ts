@@ -91,7 +91,11 @@ export interface PriorAuthEvent {
 
 export interface CaseDetail extends PriorAuthCase {
   events: PriorAuthEvent[];
+  // Moves staff can make. Insurer decisions (approve, deny…) never appear here.
   allowedActions: PriorAuthStatus[];
+  // What the insurer could send next (used by the demo simulator).
+  insurerActions: PriorAuthStatus[];
+  isFinal: boolean;
 }
 
 export interface Stats {

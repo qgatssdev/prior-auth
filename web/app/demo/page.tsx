@@ -1,6 +1,8 @@
 "use client";
 
+import { FlaskConical } from "lucide-react";
 import { useState } from "react";
+import { PageHeader } from "@/components/page-header";
 import { type LogEntry, ResponseLog } from "@/components/response-log";
 import { SimulatorForm } from "@/components/simulator-form";
 import type { SimulateResult, SimulatorMode } from "@/lib/types";
@@ -28,10 +30,10 @@ export default function DemoPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <PageHeader icon={FlaskConical} title="Demo tools" />
       <div className="rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
         Demo tools. This page plays the insurer, to show how incoming updates are handled.
       </div>
-      <h1 className="text-2xl font-semibold tracking-tight">Demo tools</h1>
       <SimulatorForm onResult={addEntry} />
       <ResponseLog entries={entries} />
     </div>

@@ -22,9 +22,11 @@ function errorMessage(body: unknown, status: number) {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  // Content-Type only when sending a body: on a GET it would make the browser send
+  // an extra CORS preflight (OPTIONS) request before every poll.
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers: init?.body ? { "Content-Type": "application/json", ...init.headers } : init?.headers,
   });
   const body = await response.json().catch(() => null);
   if (!response.ok) {

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { AppSidebar } from "@/components/app-sidebar";
 import { TopBar } from "@/components/top-bar";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -25,9 +26,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-muted/40">
-        <TopBar />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
+      <body className="flex min-h-full bg-background">
+        <AppSidebar />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <TopBar />
+          <main className="w-full max-w-7xl flex-1 px-4 py-6 sm:px-8 sm:py-8">{children}</main>
+        </div>
         <Toaster richColors position="top-right" />
       </body>
     </html>

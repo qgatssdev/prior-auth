@@ -11,7 +11,7 @@ import type { QueueTab } from "./queue-filters";
 const CARDS: { key: keyof Stats; label: string; color: string; tab: QueueTab }[] = [
   { key: "needsInfo", label: "Needs info", color: "text-orange-600", tab: "NEEDS_INFO" },
   { key: "pendingPayer", label: "Pending payer", color: "text-amber-600", tab: "PENDING" },
-  // Not a status: the Open tab is sorted by due date, so these come first.
+  // Not a status, so this opens the Open tab; the Due column shows which are urgent.
   { key: "dueSoon", label: "Due in 48 hours", color: "text-red-600", tab: "OPEN" },
   { key: "deniedAppealable", label: "Denied, can appeal", color: "text-purple-600", tab: "DENIED" },
 ];
@@ -20,7 +20,7 @@ export function StatCards({ onSelect }: { onSelect: (tab: QueueTab) => void }) {
   const { data } = useSWR<Stats>(paths.stats, fetcher, { refreshInterval: 5000 });
 
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
       {CARDS.map(({ key, label, color, tab }) => (
         <Card
           key={key}
@@ -28,7 +28,7 @@ export function StatCards({ onSelect }: { onSelect: (tab: QueueTab) => void }) {
           tabIndex={0}
           onClick={() => onSelect(tab)}
           onKeyDown={(e) => e.key === "Enter" && onSelect(tab)}
-          className="cursor-pointer gap-1 px-5 py-4 transition-colors hover:bg-muted/60"
+          className="cursor-pointer gap-1 px-4 py-3 transition-colors hover:bg-muted/60 sm:px-5 sm:py-4"
         >
           {data ? (
             <span className={cn("text-3xl font-semibold tabular-nums", color)}>

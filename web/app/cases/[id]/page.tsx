@@ -34,8 +34,8 @@ export default function CasePage({ params }: PageProps<"/cases/[id]">) {
     return (
       <div className="flex flex-col gap-6">
         <Skeleton className="h-16 w-1/2" />
-        <div className="grid grid-cols-3 gap-6">
-          <Skeleton className="col-span-2 h-72" />
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Skeleton className="h-72 lg:col-span-2" />
           <Skeleton className="h-40" />
         </div>
         <Skeleton className="h-48" />
@@ -46,11 +46,14 @@ export default function CasePage({ params }: PageProps<"/cases/[id]">) {
   return (
     <div className="flex flex-col gap-6">
       <CaseHeader data={data} />
-      <div className="grid grid-cols-3 items-start gap-6">
-        <div className="col-span-2">
+      {/* On phones the actions come first: they are why you opened the case. */}
+      <div className="grid items-start gap-6 lg:grid-cols-3">
+        <div className="lg:order-2">
+          <ActionsCard data={data} onChanged={() => mutate()} />
+        </div>
+        <div className="lg:order-1 lg:col-span-2">
           <CaseDetailsCard data={data} />
         </div>
-        <ActionsCard data={data} onChanged={() => mutate()} />
       </div>
       <Timeline events={data.events} />
     </div>

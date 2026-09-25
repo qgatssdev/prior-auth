@@ -41,7 +41,11 @@ export function ActionsCard({ data, onChanged }: { data: CaseDetail; onChanged: 
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
         {data.allowedActions.length === 0 && (
-          <p className="text-sm text-muted-foreground">Final status. No further actions.</p>
+          <p className="text-sm text-muted-foreground">
+            {data.isFinal
+              ? "Final status. No further actions."
+              : "Waiting on the insurer. Their decision will appear here automatically."}
+          </p>
         )}
         {data.allowedActions.map((toStatus, index) => (
           <Button

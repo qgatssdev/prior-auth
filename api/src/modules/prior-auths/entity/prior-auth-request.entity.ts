@@ -13,8 +13,8 @@ import {
 } from 'typeorm';
 import { PriorAuthEvent } from './prior-auth-event.entity';
 
-// Serves the queue: filter by status, sort by dueBy, tie-break on id (keyset cursor).
-@Index('idx_pa_status_due_id', ['status', 'dueBy', 'id'])
+// Serves the queue: filter by status, newest update first, tie-break on id (keyset cursor).
+@Index('idx_pa_status_updated_id', ['status', 'updatedAt', 'id'])
 @Index('uq_pa_payer_ref', ['payerId', 'payerReference'], { unique: true })
 @Entity()
 export class PriorAuthRequest extends BaseEntity {

@@ -1,4 +1,4 @@
-import { PriorAuthStatus } from 'src/libs/common/constants';
+import { ActorType, PriorAuthStatus } from 'src/libs/common/constants';
 
 const {
   SUBMITTED,
@@ -26,6 +26,19 @@ export const canTransition = (from: PriorAuthStatus, to: PriorAuthStatus) =>
   ALLOWED[from].includes(to);
 
 export const FINAL = [APPROVED, CANCELLED];
+
+// Decisions only the insurer makes. They arrive through the webhook, never from staff.
+export const PAYER_DECISIONS = [PENDING_PAYER, NEEDS_INFO, APPROVED, DENIED];
+
+// Who may make a move: the insurer makes its decisions; staff make every other move.
+export const canActorMake = (to: PriorAuthStatus, actor: ActorType) =>
+  actor === ActorType.PAYER
+    ? PAYER_DECISIONS.includes(to)
+    : !PAYER_DECISIONS.includes(to);
+
+// The moves this actor can make from a status: valid in the lifecycle AND theirs to make.
+export const allowedFor = (from: PriorAuthStatus, actor: ActorType) =>
+  ALLOWED[from].filter((to) => canActorMake(to, actor));
 
 // A note is required when resubmitting from NEEDS_INFO and when appealing.
 export const noteRequired = (from: PriorAuthStatus, to: PriorAuthStatus) =>

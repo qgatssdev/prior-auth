@@ -55,28 +55,29 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  /* PA Desk: sky-blue accent (the one colour), white surfaces, cool light greys. */
+  --primary: #3aa6d9;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --muted: #f5f7f9;
+  --muted-foreground: #6b7280;
+  --accent: #eef7fc;
+  --accent-foreground: #1f2937;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: #e6e8ec;
+  --input: #e1e4e8;
+  --ring: #8ccbea;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
+  --sidebar: #ffffff;
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: #3aa6d9;
+  --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
@@ -126,5 +127,51 @@
   }
   html {
     @apply font-sans;
+    /* Always reserve the scrollbar's space, so nothing shifts when it disappears. */
+    scrollbar-gutter: stable;
+    overflow-x: clip;
+  }
+  body {
+    overflow-x: clip;
+  }
+
+  /*
+   * Radix dialogs and sheets lock scrolling through react-remove-scroll, which sets
+   * overflow: hidden on <body> and adds a right margin to make up for the lost
+   * scrollbar. With <html> as the scroll container (overflow-x: clip above stops
+   * body-to-viewport propagation), that makes <body> its own scroll container,
+   * which breaks position: sticky (the sidebar), and the extra margin shifts the
+   * page. So the lock moves to <html>, and the margin is dropped: the stable gutter
+   * already holds the scrollbar's space. Same fix as the yadsale frontend.
+   */
+  /*
+   * Everything clickable shows the pointing hand. Tailwind's reset gives buttons the
+   * default arrow; links already get the hand from the browser. Disabled controls show
+   * "not allowed". :not(input) keeps the text cursor in search boxes (role=combobox).
+   */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"],
+  [role="option"],
+  [role="combobox"]:not(input) {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+  /* The date field's calendar icon opens the picker, so it gets the hand too. */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
+
+  html:has(body[data-scroll-locked]) {
+    overflow: hidden !important;
+  }
+  html body[data-scroll-locked] {
+    overflow-x: clip !important;
+    overflow-y: visible !important;
+    margin-right: 0 !important;
+    --removed-body-scroll-bar-size: 0px !important;
   }
 }

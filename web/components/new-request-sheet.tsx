@@ -22,8 +22,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { createCase, fetcher, paths, transitionCase } from "@/lib/api";
+import { SearchableSelect } from "./searchable-select";
 import { TREATMENTS } from "@/lib/codes";
 import { dayFromToday } from "@/lib/dates";
+import { fullName } from "@/lib/utils";
 import type { Coverage, Patient, PriorAuthCase } from "@/lib/types";
 
 // Same rule as the API: the service must be at least 4 days away.
@@ -140,33 +142,33 @@ export function NewRequestSheet({ open, onOpenChange, onChanged }: NewRequestShe
 
   return (
     <Sheet open={open} onOpenChange={reset}>
-      <SheetContent className="sm:max-w-md">
+      <SheetContent className="data-[side=right]:w-full data-[side=right]:sm:max-w-md">
         <SheetHeader>
           <SheetTitle>{created ? "Draft created" : "New request"}</SheetTitle>
           <SheetDescription>
             {created
-              ? `${createdPatient?.lastName}, ${createdPatient?.firstName} · ${created.treatmentName}`
+              ? `${createdPatient ? fullName(createdPatient) : ""} · ${created.treatmentName}`
               : "Creates a draft prior authorization request."}
           </SheetDescription>
         </SheetHeader>
 
         {created ? (
           <SheetFooter className="mt-0 flex-col gap-2">
-            <Button onClick={submitNow} disabled={busy}>
+            <Button className="h-10" onClick={submitNow} disabled={busy}>
               {busy ? "Submitting…" : "Submit to payer now"}
             </Button>
-            <Button variant="outline" onClick={() => router.push(`/cases/${created.id}`)}>
+            <Button className="h-10" variant="outline" onClick={() => router.push(`/cases/${created.id}`)}>
               Open case
             </Button>
           </SheetFooter>
         ) : (
           <>
-            <div className="flex flex-col gap-5 px-4">
+            <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-4">
               <Field label="Patient" error={errors.patientId}>
-                <Select
+                <SearchableSelect
                   value={form.patientId}
                   // Pre-select the patient's primary coverage; a secondary one can be chosen instead.
-                  onValueChange={(patientId) =>
+                  onChange={(patientId) =>
                     update({
                       patientId,
                       coverageId:
@@ -175,21 +177,23 @@ export function NewRequestSheet({ open, onOpenChange, onChanged }: NewRequestShe
                           ?.coverages?.find((c) => c.priority === "PRIMARY")?.id ?? "",
                     })
                   }
-                >
-                  <SelectTrigger className="w-full" aria-invalid={!!errors.patientId}>
-                    <SelectValue placeholder="Choose a patient" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {patients?.map((patient) => (
-                      <SelectItem key={patient.id} value={patient.id}>
-                        {patient.lastName}, {patient.firstName}
+                  options={(patients ?? []).map((patient) => ({
+                    value: patient.id,
+                    searchText: fullName(patient),
+                    label: (
+                      <>
+                        {fullName(patient)}
                         {(patient.coverages?.length ?? 0) > 1 && (
                           <span className="text-muted-foreground"> · {patient.coverages?.length} plans</span>
                         )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      </>
+                    ),
+                  }))}
+                  invalid={!!errors.patientId}
+                  placeholder="Choose a patient"
+                  searchPlaceholder="Search patients…"
+                  emptyText="No patient matches."
+                />
               </Field>
 
               {/* Only the chosen patient's own plans, so the payer and member ID always match. */}
@@ -245,7 +249,8 @@ export function NewRequestSheet({ open, onOpenChange, onChanged }: NewRequestShe
             </div>
 
             <SheetFooter>
-              <Button onClick={save} disabled={busy}>
+              {/* Full-width footer actions: 40px tall, easier to hit than the default 32px. */}
+              <Button className="h-10" onClick={save} disabled={busy}>
                 {busy ? "Saving…" : "Save draft"}
               </Button>
             </SheetFooter>

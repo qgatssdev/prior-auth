@@ -1,9 +1,10 @@
-import type { PriorAuthStatus } from "./types";
+import type { PayerStatusWord, PriorAuthStatus, SimulatorMode, WebhookResult } from "./types";
 
 interface StatusMeta {
   label: string;
   badgeClass: string;
-  // Button text when this status is the target of an action.
+  // Button text when staff can move a case to this status. null for the start
+  // status and for the insurer's decisions, which never get a staff button.
   actionLabel: string | null;
 }
 
@@ -21,22 +22,22 @@ export const STATUS: Record<PriorAuthStatus, StatusMeta> = {
   PENDING_PAYER: {
     label: "Pending payer",
     badgeClass: "bg-amber-100 text-amber-800 border-amber-200",
-    actionLabel: "Mark pending",
+    actionLabel: null,
   },
   NEEDS_INFO: {
     label: "Needs info",
     badgeClass: "bg-orange-100 text-orange-800 border-orange-200",
-    actionLabel: "Mark needs info",
+    actionLabel: null,
   },
   APPROVED: {
     label: "Approved",
     badgeClass: "bg-green-100 text-green-800 border-green-200",
-    actionLabel: "Mark approved",
+    actionLabel: null,
   },
   DENIED: {
     label: "Denied",
     badgeClass: "bg-red-100 text-red-800 border-red-200",
-    actionLabel: "Mark denied",
+    actionLabel: null,
   },
   APPEALED: {
     label: "Appealed",
@@ -61,3 +62,33 @@ export function actionLabel(from: PriorAuthStatus, to: PriorAuthStatus) {
 // can ask for the note up front. The API still enforces it.
 export const noteRequired = (from: PriorAuthStatus, to: PriorAuthStatus) =>
   (from === "NEEDS_INFO" && to === "SUBMITTED") || to === "APPEALED";
+
+// Readable labels for the values the insurer webhook and simulator use (the API keeps the raw values).
+export const PAYER_WORD_LABEL: Record<PayerStatusWord, string> = {
+  pending: "Pending",
+  needs_info: "Needs info",
+  approved: "Approved",
+  denied: "Denied",
+};
+
+// The status each insurer word moves a case to (mirrors STATUS_MAP in the webhook service).
+export const PAYER_WORD_STATUS: Record<PayerStatusWord, PriorAuthStatus> = {
+  pending: "PENDING_PAYER",
+  needs_info: "NEEDS_INFO",
+  approved: "APPROVED",
+  denied: "DENIED",
+};
+
+export const MODE_LABEL: Record<SimulatorMode, string> = {
+  normal: "Sent",
+  duplicate: "Duplicate",
+  bad_signature: "Bad signature",
+};
+
+export const RESULT_LABEL: Record<WebhookResult, string> = {
+  applied: "Applied",
+  duplicate_ignored: "Duplicate ignored",
+  rejected_invalid_transition: "Rejected: move not allowed",
+  case_not_found: "Case not found",
+  invalid_signature: "Invalid signature",
+};

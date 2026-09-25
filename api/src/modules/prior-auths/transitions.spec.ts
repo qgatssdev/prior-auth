@@ -1,5 +1,13 @@
-import { PriorAuthStatus } from 'src/libs/common/constants';
-import { ALLOWED, canTransition, FINAL, noteRequired } from './transitions';
+import { ActorType, PriorAuthStatus } from 'src/libs/common/constants';
+import {
+  ALLOWED,
+  allowedFor,
+  canActorMake,
+  canTransition,
+  FINAL,
+  noteRequired,
+  PAYER_DECISIONS,
+} from './transitions';
 
 const {
   DRAFT,
@@ -80,6 +88,43 @@ describe('transitions', () => {
       [DRAFT, CANCELLED],
     ])('does not require a note for %s -> %s', (from, to) => {
       expect(noteRequired(from, to)).toBe(false);
+    });
+  });
+
+  describe('who can make a move', () => {
+    const { USER, PAYER } = ActorType;
+
+    it.each(PAYER_DECISIONS)('only the insurer can move a case to %s', (to) => {
+      expect(canActorMake(to, PAYER)).toBe(true);
+      expect(canActorMake(to, USER)).toBe(false);
+    });
+
+    it.each([SUBMITTED, APPEALED, CANCELLED])(
+      'only staff can move a case to %s',
+      (to) => {
+        expect(canActorMake(to, USER)).toBe(true);
+        expect(canActorMake(to, PAYER)).toBe(false);
+      },
+    );
+
+    it.each([
+      [DRAFT, [SUBMITTED, CANCELLED]],
+      [SUBMITTED, []],
+      [PENDING_PAYER, []],
+      [NEEDS_INFO, [SUBMITTED]],
+      [DENIED, [APPEALED]],
+      [APPEALED, []],
+    ])('staff can move %s to %j', (from, expected) => {
+      expect(allowedFor(from, USER)).toEqual(expected);
+    });
+
+    it('the insurer can decide a case waiting on it', () => {
+      expect(allowedFor(PENDING_PAYER, PAYER)).toEqual([
+        NEEDS_INFO,
+        APPROVED,
+        DENIED,
+      ]);
+      expect(allowedFor(APPEALED, PAYER)).toEqual([APPROVED, DENIED]);
     });
   });
 });

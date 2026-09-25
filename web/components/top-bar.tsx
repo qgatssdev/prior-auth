@@ -3,39 +3,36 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { BrandMark } from "./brand-mark";
+import { isActive, NAV_SECTIONS } from "./nav-links";
 
-const LINKS = [
-  { href: "/", label: "Queue" },
-  { href: "/demo", label: "Demo tools" },
-];
-
+// Phones and tablets: a compact bar instead of the sidebar.
 export function TopBar() {
   const pathname = usePathname();
+  const links = NAV_SECTIONS.flatMap((section) => section.links);
 
   return (
-    <header className="border-b bg-background">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="font-semibold tracking-tight">
-          PA Desk
+    <header className="border-b bg-background lg:hidden">
+      <div className="flex h-14 items-center justify-between px-4 sm:px-6">
+        <Link href="/">
+          <BrandMark />
         </Link>
         <nav className="flex gap-1 text-sm">
-          {LINKS.map(({ href, label }) => {
-            // The queue link also covers case pages, which you open from the queue.
-            const active =
-              href === "/" ? !pathname.startsWith("/demo") : pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  "rounded-md px-3 py-1.5 text-muted-foreground hover:text-foreground",
-                  active && "bg-muted font-medium text-foreground",
-                )}
-              >
-                {label}
-              </Link>
-            );
-          })}
+          {links.map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium",
+                isActive(href, pathname)
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Icon className="size-4" />
+              {label}
+            </Link>
+          ))}
         </nav>
       </div>
     </header>

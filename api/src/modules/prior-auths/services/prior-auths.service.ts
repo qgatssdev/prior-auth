@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -22,22 +23,25 @@ import { CreatePriorAuthDto } from '../dto/create-prior-auth.dto';
 import { ListQueryDto } from '../dto/list-query.dto';
 import { PriorAuthRequestRepository } from '../repository/prior-auth-request.repository';
 import {
-  ALLOWED,
+  allowedFor,
+  canActorMake,
   canTransition,
+  FINAL,
   noteRequired,
   STATUS_GROUPS,
 } from '../transitions';
 
-// Cursor = base64url of "dueBy|id", the sort key of the last row on the page.
-const encodeCursor = ({ dueBy, id }: PriorAuthRequest) =>
-  Buffer.from(`${dueBy}|${id}`).toString('base64url');
+// Cursor = base64url of "updatedAt|id", the sort key of the last row on the page.
+const encodeCursor = ({ updatedAt, id }: PriorAuthRequest) =>
+  Buffer.from(`${updatedAt.toISOString()}|${id}`).toString('base64url');
 
 const decodeCursor = (cursor: string) => {
-  const [dueBy, id] = Buffer.from(cursor, 'base64url').toString().split('|');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueBy) || !isUUID(id)) {
+  const [iso, id] = Buffer.from(cursor, 'base64url').toString().split('|');
+  const updatedAt = new Date(iso);
+  if (Number.isNaN(updatedAt.getTime()) || !isUUID(id)) {
     throw new BadRequestException('Invalid cursor');
   }
-  return { dueBy, id };
+  return { updatedAt, id };
 };
 
 @Injectable()
@@ -70,8 +74,15 @@ export class PriorAuthsService {
     if (!request) {
       throw new NotFoundException('Prior auth request not found');
     }
+    // allowedActions are the moves a staff user can make (the UI's actor): the
+    // insurer's decisions are left out, because only the insurer makes those.
     // Object.assign keeps the entity class, so @Exclude (version) still applies.
-    return Object.assign(request, { allowedActions: ALLOWED[request.status] });
+    return Object.assign(request, {
+      allowedActions: allowedFor(request.status, ActorType.USER),
+      // What the insurer could send next. Used by the demo simulator to offer only valid updates.
+      insurerActions: allowedFor(request.status, ActorType.PAYER),
+      isFinal: FINAL.includes(request.status),
+    });
   }
 
   async create(dto: CreatePriorAuthDto) {
@@ -141,6 +152,14 @@ export class PriorAuthsService {
       }
 
       const fromStatus = request.status;
+      // Who first: approving, denying and the other insurer decisions come only from the insurer.
+      if (!canActorMake(toStatus, actor.type)) {
+        throw new ForbiddenException(
+          actor.type === ActorType.PAYER
+            ? `The insurer cannot move a case to ${toStatus}`
+            : `Only the insurer can move a case to ${toStatus}`,
+        );
+      }
       if (!canTransition(fromStatus, toStatus)) {
         throw new ConflictException(
           `Cannot move from ${fromStatus} to ${toStatus}`,

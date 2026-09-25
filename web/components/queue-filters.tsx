@@ -44,8 +44,14 @@ export function QueueFilters({
   const { data: payers } = useSWR<Payer[]>(paths.payers, fetcher);
 
   return (
-    <div className="flex items-center gap-3">
-      <Tabs value={tab} onValueChange={(value) => onTabChange(value as QueueTab)}>
+    <div className="flex flex-col gap-3 md:flex-row md:items-center">
+      <Tabs
+        value={tab}
+        onValueChange={(value) => onTabChange(value as QueueTab)}
+        // Narrow screens: the strip scrolls sideways, scrollbar hidden. From md up: no scrolling at all
+        // (overflow-x-auto also enables vertical scroll, and the active tab's shadow showed a scrollbar).
+        className="max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] md:overflow-visible [&::-webkit-scrollbar]:hidden"
+      >
         <TabsList>
           {QUEUE_TABS.map(({ value, label }) => (
             <TabsTrigger key={value} value={value} className="px-3">
@@ -59,7 +65,7 @@ export function QueueFilters({
         value={payerId ?? ALL_PAYERS}
         onValueChange={(value) => onPayerChange(value === ALL_PAYERS ? undefined : value)}
       >
-        <SelectTrigger className="w-44 bg-background">
+        <SelectTrigger className="w-full bg-background md:w-44">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -72,7 +78,7 @@ export function QueueFilters({
         </SelectContent>
       </Select>
 
-      <Button className="ml-auto" onClick={onNewRequest}>
+      <Button className="md:ml-auto" onClick={onNewRequest}>
         <Plus /> New request
       </Button>
     </div>

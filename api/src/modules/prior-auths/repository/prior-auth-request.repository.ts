@@ -8,7 +8,7 @@ export interface QueueFilter {
   statuses: PriorAuthStatus[];
   payerId?: string;
   limit: number;
-  after?: { dueBy: string; id: string };
+  after?: { updatedAt: Date; id: string };
 }
 
 export class PriorAuthRequestRepository extends BaseRepository<PriorAuthRequest> {
@@ -19,7 +19,8 @@ export class PriorAuthRequestRepository extends BaseRepository<PriorAuthRequest>
     super(entityManager.getRepository(PriorAuthRequest));
   }
 
-  // Keyset pagination on (dueBy, id): served by idx_pa_status_due_id, no OFFSET scan.
+  // Newest update first. Keyset pagination on (updatedAt, id), served by
+  // idx_pa_status_updated_id (read backwards for DESC), no OFFSET scan.
   findQueue({ statuses, payerId, limit, after }: QueueFilter) {
     const query = this.createQueryBuilder('pa')
       .leftJoin('pa.patient', 'patient')
@@ -37,8 +38,8 @@ export class PriorAuthRequestRepository extends BaseRepository<PriorAuthRequest>
         'coverage.priority',
       ])
       .where('pa.status IN (:...statuses)', { statuses })
-      .orderBy('pa.dueBy', 'ASC')
-      .addOrderBy('pa.id', 'ASC')
+      .orderBy('pa.updatedAt', 'DESC')
+      .addOrderBy('pa.id', 'DESC')
       .limit(limit);
 
     if (payerId) {
@@ -46,7 +47,8 @@ export class PriorAuthRequestRepository extends BaseRepository<PriorAuthRequest>
     }
     if (after) {
       query.andWhere(
-        '(pa.dueBy > :dueBy OR (pa.dueBy = :dueBy AND pa.id > :id))',
+        // "After" the last row means older: DESC order, so the comparisons flip to <.
+        '(pa.updatedAt < :updatedAt OR (pa.updatedAt = :updatedAt AND pa.id < :id))',
         after,
       );
     }

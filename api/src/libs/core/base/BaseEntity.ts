@@ -14,7 +14,9 @@ export abstract class BaseEntity {
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz' })
+  // Millisecond precision (Postgres defaults to microseconds): the queue's cursor
+  // carries updatedAt through JavaScript, whose Date only holds milliseconds.
+  @UpdateDateColumn({ type: 'timestamptz', precision: 3 })
   updatedAt: Date;
 
   @Exclude()
