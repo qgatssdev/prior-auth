@@ -2,7 +2,7 @@
 
 A prior-authorization work queue for a specialty medical practice's billing team. Specialists see every open request sorted by what changed most recently, move cases through a strict status lifecycle, and receive signed status updates from insurers through a webhook that rejects forged messages and ignores duplicates.
 
-**Portfolio project. All data is fake. Not affiliated with any company.**
+**All data is fake. Not affiliated with any company.**
 
 ![Queue](docs/screenshots/queue.png)
 
