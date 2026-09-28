@@ -1,7 +1,5 @@
 # PA Desk
 
-> **Demo video:** _Loom link goes here_
-
 A prior-authorization work queue for a specialty medical practice's billing team. Specialists see every open request sorted by what changed most recently, move cases through a strict status lifecycle, and receive signed status updates from insurers through a webhook that rejects forged messages and ignores duplicates.
 
 **Portfolio project. All data is fake. Not affiliated with any company.**
@@ -87,17 +85,3 @@ Each is tested up, down and up again, and checked for drift afterwards.
 - **Demo tools** (`/demo`) is a demo-only simulator. It signs updates with an insurer's secret, or a wrong one, and sends them to the real webhook over HTTP.
 
 ---
-
-## What I'd build next
-
-- **A per-payer rules engine** for when a prior authorization is required.
-- **Webhook processing on BullMQ** with retries and a dead-letter queue. Today, a crash between saving the inbox row and processing it relies on deleting the row so the insurer's retry gets through; a queue with an outbox makes this durable.
-- **Nightly reconciliation** against each insurer's records.
-- **Field-level encryption for PHI**, role-based access, and no PHI in logs. Webhook secrets would move to a secrets manager, with rotation.
-- **EHR appointment sync** as a background job.
-- **A handoff queue** for cases automation can't finish.
-- Smaller improvements:
-  - A row-value cursor condition, `(updatedAt, id) < ($1, $2)`, so the index can seek to the cursor instead of filtering (visible as `Rows Removed by Filter` above).
-  - Making the audit table append-only in the database itself (`REVOKE UPDATE, DELETE`).
-  - Optimistic locking on the existing `version` column for multi-field edit forms.
-  - Server-sent events instead of polling.
